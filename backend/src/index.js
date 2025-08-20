@@ -12,6 +12,10 @@ async function main() {
   
   // Start the HTTP server
   await startServer({ port, config });
+
+  // Log bucket mode at startup for debugging
+  const bucketSizeMs = process.env.PULSE_DEBUG_MINUTE_BUCKETS === '1' ? 60000 : 3600000;
+  console.log(`[Startup] Bucket mode: ${bucketSizeMs === 60000 ? 'minute (60s)' : 'hourly (3600s)'}`);
   
   // Start the poller
   const stopPoller = startPoller(config, {

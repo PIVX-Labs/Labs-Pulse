@@ -5,22 +5,6 @@ async function fetchJson(url) {
   return res.json();
 }
 
-// Derive bucket size by inspecting deltas in hour_utc_ms.
-// Fallback to hourly. If we detect minute buckets (<= 70s), switch to minute.
-function inferBucketSizeFromSnapshots(snapshots) {
-  if (!snapshots || snapshots.length < 3) return 3600000;
-  const deltas = [];
-  for (let i = 1; i < snapshots.length; i++) {
-    deltas.push(snapshots[i].hour_utc_ms - snapshots[i - 1].hour_utc_ms);
-  }
-  deltas.sort((a, b) => a - b);
-  const mid = Math.floor(deltas.length / 2);
-  const medianDelta =
-    deltas.length % 2 === 1
-      ? deltas[mid]
-      : Math.round((deltas[mid - 1] + deltas[mid]) / 2);
-  return medianDelta <= 70000 ? 60000 : 3600000;
-}
 
 function computeWindow(nowMs, bucketMs, len) {
   const currentBucketStart = Math.floor(nowMs / bucketMs) * bucketMs;
@@ -259,29 +243,6 @@ async function loadSnapshotsForServices(services, bucketMs, len) {
   }
 }
 
-async function detectBucketMs(services) {
-  // Try with one service to infer bucket spacing
-  if (!services.length) return 3600000;
-  const probeId = services[0].id;
-  const now = Date.now();
-
-  // Probe around "now" using a small minute-scale window to catch minute mode,
-  // while still compatible with hourly data. This avoids using an older hourly
-  // boundary as "to", which would exclude fresh minute snapshots.
-  const MINUTE = 60000;
-  const to = Math.floor(now / MINUTE) * MINUTE - MINUTE; // last completed minute
-  const from = to - (200 - 1) * MINUTE; // 200 buckets inclusive
-  const url = `/api/snapshots?service_id=${encodeURIComponent(probeId)}&from_utc_ms=${from}&to_utc_ms=${to}&limit=200`;
-
-  try {
-    const data = await fetchJson(url);
-    const snaps = data.snapshots || [];
-    return inferBucketSizeFromSnapshots(snaps);
-  } catch (error) {
-    console.error("Failed to detect bucket size:", error);
-    return 3600000;
-  }
-}
 
 async function main() {
   try {
@@ -294,10 +255,10 @@ async function main() {
       thresholdsByService.set(s.id, s.slow_threshold_ms || 1000)
     );
 
-    // Detect bucket size: prefer backend hint, fall back to inference
+    // Detect bucket size from backend; fallback to hourly (3600000) if unavailable
     let bucketMs = await fetchBucketSize();
     if (!bucketMs) {
-      bucketMs = await detectBucketMs(services);
+      bucketMs = 3600000;
     }
     
     // Calculate how many cells can fit on screen
@@ -337,16 +298,6 @@ async function main() {
         // If we didn't get any data (error or empty), keep the current UI (loading or last good)
         if (!snapshotsByService) return;
 
-        // Re-check if bucket mode changed based on returned data (rare)
-        const firstId = services[0] ? services[0].id : null;
-        if (firstId) {
-          // Get snaps for the first service to check bucket size
-          const snaps = snapshotsByService.get(firstId) || [];
-          const inferred = inferBucketSizeFromSnapshots(snaps);
-          if (inferred !== bucketMs) {
-            bucketMs = inferred;
-          }
-        }
 
         const rows = buildCells(
           services,
