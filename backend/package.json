@@ -1,0 +1,27 @@
+{
+  "name": "labs-pulse-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Labs Pulse backend: monitor PIVX infrastructure and serve snapshots.",
+  "main": "src/index.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "nodemon --watch src --ext js,json --exec node src/index.js",
+    "start:minute": "PULSE_DEBUG_MINUTE_BUCKETS=1 node src/index.js",
+    "health": "node -e \"fetch('http://localhost:8080/api/ping').then(r=>r.json()).then(j=>{console.log(j);}).catch(e=>{console.error(e);process.exit(1);});\"",
+    "health:services": "node -e \"fetch('http://localhost:8080/api/services').then(r=>r.json()).then(j=>{console.log(j);}).catch(e=>{console.error(e);process.exit(1);});\"",
+    "health:full": "node -e \"fetch('http://localhost:8080/api/health').then(r=>r.json()).then(j=>{console.log(j);}).catch(e=>{console.error(e);process.exit(1);});\"",
+    "seed": "node scripts/seed.js",
+    "lint": "echo \"No lint configured\""
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  }
+}

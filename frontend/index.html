@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Labs Pulse</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header>
+      <h1>Labs Pulse</h1>
+      <p>PIVX Labs infrastructure monitor</p>
+    </header>
+
+    <main>
+      <section id="legend">
+        <span class="cell green"></span> <span>Healthy</span>
+        <span class="cell yellow"></span> <span>Slow</span>
+        <span class="cell red"></span> <span>Down</span>
+      </section>
+
+      <section id="services"></section>
+    </main>
+
+    <footer>
+      <small>Backend <a href="/api/ping" target="_blank" rel="noopener">ping</a></small>
+    </footer>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

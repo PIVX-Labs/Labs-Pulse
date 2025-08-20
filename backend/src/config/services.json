@@ -1,0 +1,88 @@
+{
+  "poll_interval_ms": 60000,
+  "retention_days": 90,
+  "timezone": "UTC",
+  "services": [
+    {
+      "id": "pivx-org",
+      "name": "PIVX Website",
+      "url": "https://pivx.org",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1000,
+      "tags": ["web"],
+      "retries": 0
+    },
+    {
+      "id": "pivx-labs-home",
+      "name": "PIVX Labs Home",
+      "url": "https://pivxla.bz/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1000,
+      "tags": ["web"],
+      "retries": 0
+    },
+    {
+      "id": "mpw-landing",
+      "name": "My PIVX Wallet (Landing)",
+      "url": "https://mypivxwallet.org/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1000,
+      "tags": ["web"],
+      "retries": 0
+    },
+    {
+      "id": "mpw-app",
+      "name": "My PIVX Wallet (App)",
+      "url": "https://app.mypivxwallet.org/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1000,
+      "tags": ["web"],
+      "retries": 0
+    },
+    {
+      "id": "pivcards",
+      "name": "PIVCards",
+      "url": "https://cards.pivxla.bz/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1000,
+      "tags": ["web"],
+      "retries": 0
+    },
+    {
+      "id": "pivx-labs-explorer",
+      "name": "PIVX Labs Explorer",
+      "url": "https://explorer.pivxla.bz/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1200,
+      "tags": ["infra"],
+      "retries": 0
+    },
+    {
+      "id": "duddino-explorer-1",
+      "name": "Duddino Explorer (1)",
+      "url": "https://explorer.duddino.com/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1200,
+      "tags": ["infra"],
+      "retries": 0
+    },
+    {
+      "id": "duddino-explorer-2",
+      "name": "Duddino Explorer (2)",
+      "url": "https://explorer2.duddino.com/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1200,
+      "tags": ["infra"],
+      "retries": 0
+    },
+    {
+      "id": "zkbitcoin-explorer",
+      "name": "zkBitcoin Explorer",
+      "url": "https://zkbitcoin.com/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1200,
+      "tags": ["infra"],
+      "retries": 0
+    }
+  ]
+}

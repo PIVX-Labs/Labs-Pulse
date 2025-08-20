@@ -1,0 +1,29 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Labs Pulse Configuration",
+  "type": "object",
+  "properties": {
+    "poll_interval_ms": { "type": "integer", "minimum": 10000 },
+    "retention_days": { "type": "integer", "minimum": 1 },
+    "timezone": { "type": "string" },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "url"],
+        "properties": {
+          "id": { "type": "string", "minLength": 1 },
+          "name": { "type": "string", "minLength": 1 },
+          "url": { "type": "string", "format": "uri" },
+          "timeout_ms": { "type": "integer", "minimum": 100 },
+          "slow_threshold_ms": { "type": "integer", "minimum": 1 },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "retries": { "type": "integer", "minimum": 0 }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "required": ["services"],
+  "additionalProperties": false
+}
