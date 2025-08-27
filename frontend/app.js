@@ -131,9 +131,21 @@ function showTooltip(event, cellData) {
     <div class="tooltip-ping">${pingStr}</div>
   `;
   
-  // Position tooltip near cursor
-  tooltip.style.left = (event.pageX + 10) + 'px';
-  tooltip.style.top = (event.pageY + 10) + 'px';
+  // Check if mobile device
+  const isMobile = window.innerWidth <= 640;
+  
+  if (isMobile) {
+    // Center tooltip on mobile
+    tooltip.style.left = '50%';
+    tooltip.style.top = (event.pageY + 15) + 'px';
+    tooltip.style.transform = 'translateX(-50%)';
+  } else {
+    // Normal desktop positioning
+    tooltip.style.left = (event.pageX + 10) + 'px';
+    tooltip.style.top = (event.pageY + 10) + 'px';
+    tooltip.style.transform = 'none';
+  }
+  
   tooltip.style.display = 'block';
 }
 
@@ -170,8 +182,21 @@ function showServiceTooltip(event, service, latestPing, status) {
     <div class="tooltip-last-check">Last checked: ${lastChecked}</div>
   `;
   
-  tooltip.style.left = (event.pageX + 10) + 'px';
-  tooltip.style.top = (event.pageY + 10) + 'px';
+  // Check if mobile device
+  const isMobile = window.innerWidth <= 640;
+  
+  if (isMobile) {
+    // Center tooltip on mobile
+    tooltip.style.left = '50%';
+    tooltip.style.top = (event.pageY + 15) + 'px';
+    tooltip.style.transform = 'translateX(-50%)';
+  } else {
+    // Normal desktop positioning
+    tooltip.style.left = (event.pageX + 10) + 'px';
+    tooltip.style.top = (event.pageY + 10) + 'px';
+    tooltip.style.transform = 'none';
+  }
+  
   tooltip.style.display = 'block';
 }
 
@@ -258,26 +283,7 @@ function render(services, rows) {
       name.className = "service-name";
       name.textContent = row.service.name;
 
-      serviceCard.appendChild(name);
-
-      // Add service card tooltip
-      serviceCard.addEventListener("mouseenter", (e) => {
-        const latestCell = row.cells[row.cells.length - 1];
-        const latestPing = latestCell ? latestCell.ping_ms : 0;
-        showServiceTooltip(e, row.service, latestPing, row.cardStatus);
-      });
-      
-      serviceCard.addEventListener("mousemove", (e) => {
-        const tooltip = document.getElementById('serviceTooltip');
-        if (tooltip && tooltip.style.display === 'block') {
-          tooltip.style.left = (e.pageX + 10) + 'px';
-          tooltip.style.top = (e.pageY + 10) + 'px';
-        }
-      });
-      
-      serviceCard.addEventListener("mouseleave", hideServiceTooltip);
-
-      // Timeline
+      // Timeline inside the service card
       const timeline = document.createElement("div");
       timeline.className = "timeline";
 
@@ -289,9 +295,13 @@ function render(services, rows) {
         cell.addEventListener("mouseover", (e) => showTooltip(e, c));
         cell.addEventListener("mousemove", (e) => {
           const tooltip = document.getElementById("custom-tooltip");
-          if (tooltip) {
-            tooltip.style.left = e.pageX + 10 + "px";
-            tooltip.style.top = e.pageY + 10 + "px";
+          if (tooltip && tooltip.style.display === 'block') {
+            const isMobile = window.innerWidth <= 640;
+            if (!isMobile) {
+              // Only update position on desktop
+              tooltip.style.left = e.pageX + 10 + "px";
+              tooltip.style.top = e.pageY + 10 + "px";
+            }
           }
         });
         cell.addEventListener("mouseout", hideTooltip);
@@ -299,8 +309,31 @@ function render(services, rows) {
         timeline.appendChild(cell);
       });
 
+      serviceCard.appendChild(name);
+      serviceCard.appendChild(timeline);
+
+      // Add service card tooltip
+      serviceCard.addEventListener("mouseenter", (e) => {
+        const latestCell = row.cells[row.cells.length - 1];
+        const latestPing = latestCell ? latestCell.ping_ms : 0;
+        showServiceTooltip(e, row.service, latestPing, row.cardStatus);
+      });
+      
+      serviceCard.addEventListener("mousemove", (e) => {
+        const tooltip = document.getElementById('serviceTooltip');
+        if (tooltip && tooltip.style.display === 'block') {
+          const isMobile = window.innerWidth <= 640;
+          if (!isMobile) {
+            // Only update position on desktop
+            tooltip.style.left = (e.pageX + 10) + 'px';
+            tooltip.style.top = (e.pageY + 10) + 'px';
+          }
+        }
+      });
+      
+      serviceCard.addEventListener("mouseleave", hideServiceTooltip);
+
       serviceItem.appendChild(serviceCard);
-      serviceItem.appendChild(timeline);
       servicesContainer.appendChild(serviceItem);
     });
 

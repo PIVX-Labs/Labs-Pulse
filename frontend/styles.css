@@ -197,14 +197,14 @@ header p { margin: 4px 0 0 0; color: var(--muted); }
 .service-item {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0;
 }
 
 .service-card {
   background: linear-gradient(145deg, rgba(144, 70, 177, 0.2), rgba(37, 6, 58, 0.8));
   border: 1px solid rgba(144, 70, 177, 0.5);
   border-radius: 8px;
-  padding: 12px 15px 8px 15px;
+  padding: 12px 15px 12px 15px;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -250,26 +250,28 @@ header p { margin: 4px 0 0 0; color: var(--muted); }
   overflow: hidden; 
   text-overflow: ellipsis; 
   white-space: nowrap; 
-  margin-bottom: 8px;
+  margin-bottom: 12px;
   font-size: 0.95rem;
 }
 
-/* Timeline container */
+/* Timeline container - now inside service cards */
 .timeline {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: var(--cell);
+  grid-auto-columns: 1fr;
   gap: var(--gap);
   width: 100%;
+  max-width: 100%;
 }
 
-/* Base cell styles */
+/* Base cell styles - now wider to fill service card width */
 .hour-cell { 
-  width: var(--cell); 
+  width: 100%; 
   height: var(--cell); 
   background: #2a2f3a; 
   border-radius: 2px; 
   transition: all 0.2s ease;
+  min-width: 8px;
 }
 
 .hour-cell.loading { background: #1b1f27; }
@@ -364,8 +366,6 @@ header p { margin: 4px 0 0 0; color: var(--muted); }
 
   .tag-services {
     grid-template-columns: 1fr;
-    align-items: start;
-    gap: 6px;
   }
 
   .service-name {
