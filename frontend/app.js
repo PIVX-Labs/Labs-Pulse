@@ -101,11 +101,18 @@ function buildCells(services, snapshotsByService, bucketMs, len, thresholdsBySer
       return { hour: h, ping_ms: ping, cls, title };
     });
 
-    return { service: s, cells };
+    // Determine the latest status for the service card
+    const latestCell = cells[cells.length - 1];
+    let cardStatus = 'loading';
+    if (!isLoading && latestCell) {
+      cardStatus = latestCell.cls;
+    }
+
+    return { service: s, cells, cardStatus };
   });
 }
 
-// Show custom tooltip
+// Show custom tooltip for timeline cells
 function showTooltip(event, cellData) {
   let tooltip = document.getElementById('custom-tooltip');
   if (!tooltip) {
@@ -124,13 +131,25 @@ function showTooltip(event, cellData) {
     <div class="tooltip-ping">${pingStr}</div>
   `;
   
-  // Position tooltip near cursor
-  tooltip.style.left = (event.pageX + 10) + 'px';
-  tooltip.style.top = (event.pageY + 10) + 'px';
+  // Check if mobile device
+  const isMobile = window.innerWidth <= 640;
+  
+  if (isMobile) {
+    // Center tooltip on mobile
+    tooltip.style.left = '50%';
+    tooltip.style.top = (event.pageY + 15) + 'px';
+    tooltip.style.transform = 'translateX(-50%)';
+  } else {
+    // Normal desktop positioning
+    tooltip.style.left = (event.pageX + 10) + 'px';
+    tooltip.style.top = (event.pageY + 10) + 'px';
+    tooltip.style.transform = 'none';
+  }
+  
   tooltip.style.display = 'block';
 }
 
-// Hide tooltip
+// Hide tooltip for timeline cells
 function hideTooltip() {
   const tooltip = document.getElementById('custom-tooltip');
   if (tooltip) {
@@ -138,9 +157,87 @@ function hideTooltip() {
   }
 }
 
+// Show service card tooltip
+function showServiceTooltip(event, service, latestPing, status) {
+  const tooltip = document.getElementById('serviceTooltip');
+  if (!tooltip) return;
+
+  let statusText = status === 'green' ? 'Healthy' : status === 'yellow' ? 'Slow' : status === 'red' ? 'Down' : 'Loading...';
+  let responseText = '';
+  
+  if (status === 'red' || latestPing === 0) {
+    responseText = 'Service unreachable';
+  } else if (latestPing > 0) {
+    responseText = `${latestPing}ms response time`;
+  } else {
+    responseText = 'Checking...';
+  }
+
+  const lastChecked = new Date().toLocaleTimeString();
+  
+  tooltip.innerHTML = `
+    <div class="tooltip-service-name">${service.name}</div>
+    <div class="tooltip-status">Status: ${statusText}</div>
+    <div class="tooltip-response-time">${responseText}</div>
+    <div class="tooltip-last-check">Last checked: ${lastChecked}</div>
+  `;
+  
+  // Check if mobile device
+  const isMobile = window.innerWidth <= 640;
+  
+  if (isMobile) {
+    // Center tooltip on mobile
+    tooltip.style.left = '50%';
+    tooltip.style.top = (event.pageY + 15) + 'px';
+    tooltip.style.transform = 'translateX(-50%)';
+  } else {
+    // Normal desktop positioning
+    tooltip.style.left = (event.pageX + 10) + 'px';
+    tooltip.style.top = (event.pageY + 10) + 'px';
+    tooltip.style.transform = 'none';
+  }
+  
+  tooltip.style.display = 'block';
+}
+
+// Hide service card tooltip
+function hideServiceTooltip() {
+  const tooltip = document.getElementById('serviceTooltip');
+  if (tooltip) {
+    tooltip.style.display = 'none';
+  }
+}
+
+// Update stats in header
+function updateStats(services, rows) {
+  // Update last checked
+  const now = new Date();
+  const timeString = now.toLocaleTimeString();
+  const lastCheckedElement = document.getElementById('lastChecked');
+  if (lastCheckedElement) {
+    lastCheckedElement.textContent = timeString;
+  }
+
+  // Count incidents (down services)
+  let incidents = 0;
+  rows.forEach(row => {
+    if (row.cardStatus === 'red') {
+      incidents++;
+    }
+  });
+  
+  const incidentsElement = document.getElementById('incidents');
+  if (incidentsElement) {
+    incidentsElement.textContent = incidents;
+  }
+}
+
 function render(services, rows) {
   const container = document.getElementById("services");
   container.innerHTML = "";
+
+  // Update stats
+  updateStats(services, rows);
 
   // Friendly titles for known tags
   const TAG_TITLES = { web: "Web", infra: "Infrastructure" };
@@ -171,14 +268,22 @@ function render(services, rows) {
     header.textContent = tagLabel(tag);
     section.appendChild(header);
 
+    const servicesContainer = document.createElement("div");
+    servicesContainer.className = "tag-services";
+
     groupMap.get(tag).forEach((row) => {
-      const wrap = document.createElement("div");
-      wrap.className = "service-row";
+      const serviceItem = document.createElement("div");
+      serviceItem.className = "service-item";
+
+      // Service card with status indicator
+      const serviceCard = document.createElement("div");
+      serviceCard.className = `service-card ${row.cardStatus}`;
 
       const name = document.createElement("div");
       name.className = "service-name";
       name.textContent = row.service.name;
 
+      // Timeline inside the service card
       const timeline = document.createElement("div");
       timeline.className = "timeline";
 
@@ -186,25 +291,60 @@ function render(services, rows) {
         const cell = document.createElement("div");
         cell.className = `hour-cell ${c.cls}`;
 
-        // Custom tooltip
-        cell.addEventListener("mouseover", (e) => showTooltip(e, c));
+        // Custom tooltip for timeline cells
+        cell.addEventListener("mouseover", (e) => {
+          e.stopPropagation(); // Prevent service card tooltip from showing
+          hideServiceTooltip(); // Hide service tooltip if it's showing
+          showTooltip(e, c);
+        });
         cell.addEventListener("mousemove", (e) => {
+          e.stopPropagation(); // Prevent service card tooltip positioning
           const tooltip = document.getElementById("custom-tooltip");
-          if (tooltip) {
-            tooltip.style.left = e.pageX + 10 + "px";
-            tooltip.style.top = e.pageY + 10 + "px";
+          if (tooltip && tooltip.style.display === 'block') {
+            const isMobile = window.innerWidth <= 640;
+            if (!isMobile) {
+              // Only update position on desktop
+              tooltip.style.left = e.pageX + 10 + "px";
+              tooltip.style.top = e.pageY + 10 + "px";
+            }
           }
         });
-        cell.addEventListener("mouseout", hideTooltip);
+        cell.addEventListener("mouseout", (e) => {
+          hideTooltip();
+        });
 
         timeline.appendChild(cell);
       });
 
-      wrap.appendChild(name);
-      wrap.appendChild(timeline);
-      section.appendChild(wrap);
+      serviceCard.appendChild(name);
+      serviceCard.appendChild(timeline);
+
+      // Add service card tooltip
+      serviceCard.addEventListener("mouseenter", (e) => {
+        const latestCell = row.cells[row.cells.length - 1];
+        const latestPing = latestCell ? latestCell.ping_ms : 0;
+        showServiceTooltip(e, row.service, latestPing, row.cardStatus);
+      });
+      
+      serviceCard.addEventListener("mousemove", (e) => {
+        const tooltip = document.getElementById('serviceTooltip');
+        if (tooltip && tooltip.style.display === 'block') {
+          const isMobile = window.innerWidth <= 640;
+          if (!isMobile) {
+            // Only update position on desktop
+            tooltip.style.left = (e.pageX + 10) + 'px';
+            tooltip.style.top = (e.pageY + 10) + 'px';
+          }
+        }
+      });
+      
+      serviceCard.addEventListener("mouseleave", hideServiceTooltip);
+
+      serviceItem.appendChild(serviceCard);
+      servicesContainer.appendChild(serviceItem);
     });
 
+    section.appendChild(servicesContainer);
     container.appendChild(section);
   });
 }
@@ -330,6 +470,17 @@ async function main() {
       clearTimeout(window.resizeTimer);
       window.resizeTimer = setTimeout(refresh, 250);
     });
+
+    // Update last checked time every 30 seconds
+    setInterval(() => {
+      const lastCheckedElement = document.getElementById('lastChecked');
+      if (lastCheckedElement) {
+        const now = new Date();
+        const timeString = now.toLocaleTimeString();
+        lastCheckedElement.textContent = timeString;
+      }
+    }, 30000);
+
   } catch (e) {
     console.error("Failed to initialize UI", e);
     const container = document.getElementById("services");

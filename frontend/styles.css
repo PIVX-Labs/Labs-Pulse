@@ -1,3 +1,124 @@
+/* Apply global CSS styles */
+body {
+  margin: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  background-image: linear-gradient(-15deg, #7400ff, #3c067c, #380061, #370056, #370054, #370054, #380050, #380061, #3c067c, #7400ff);
+  -webkit-animation: Disco 20s cubic-bezier(.46,.03,.52,.96) infinite;
+  -moz-animation: Disco 20s cubic-bezier(.46,.03,.52,.96) infinite;
+  animation: Disco 20s cubic-bezier(.46,.03,.52,.96) infinite;
+  background-size: 200% 200%;
+  background-attachment: fixed;
+
+  overflow: hidden;
+  overflow-y: auto;
+  min-height: 100vh;
+
+  transition: 0.5s;
+}
+
+@font-face {
+  font-family: 'Montserrat';
+  src: url('https://pivxla.bz/fonts/Montserrat-Bold.ttf') format('truetype');
+}
+
+@-webkit-keyframes Disco {
+  0%{background-position:10% 0%}
+  50%{background-position:91% 100%}
+  100%{background-position:10% 0%}
+}
+
+@keyframes Disco {
+  0% {
+    background-position: 10% 0%;
+  }
+  50% {
+    background-position: 91% 100%;
+  }
+  100% {
+    background-position: 10% 0%;
+    transform: rotate(0deg);
+  }
+}
+
+.app {
+  width: fit-content;
+  height: fit-content;
+  color: white;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  background-color: rgba(37, 6, 58, 0.74);
+  border-radius: 10px;
+  padding: 25px 50px;
+  margin-left: 15px;
+  margin-right: 15px;
+  margin-top: 50px;
+  margin-bottom: 50px;
+  box-shadow: 7px 7px 33px 0px #00000026;
+  border: 1px solid #9046B1;
+  transition: 0.4s;
+  max-width: 1200px;
+  min-width: 800px;
+}
+
+.logo-gradient {
+  background: linear-gradient(to right, #8B20CA 50%, #6202D4 60%);
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: BreathingGradient 7.5s cubic-bezier(.46,.03,.52,.96) infinite;
+  font-size: 2.5rem;
+  font-weight: bold;
+  margin: 0 0 5px 0;
+}
+
+@keyframes BreathingGradient {
+  0% {background-position: 0% 50%;}
+  50% {background-position: 100% 50%;}
+  100% {background-position: 0% 50%;}
+}
+
+.subtitle {
+  font-size: 0.8rem;
+  color: #ffffff80;
+  margin: 0 0 25px 0;
+  text-align: left;
+}
+
+.stats-container {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 25px;
+}
+
+.stat-box {
+  flex: 1;
+  background-color: rgba(37, 6, 58, 0.5);
+  border: 1px solid #9046B1;
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  backdrop-filter: blur(2px);
+}
+
+.stat-title {
+  font-size: 0.9rem;
+  color: #ffffff80;
+  margin-bottom: 8px;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+/* Original styles with modifications */
 :root {
   --green: #21c36a;
   --yellow: #ffbb33;
@@ -7,42 +128,169 @@
   --muted: #8a8f98;
   --cell: 6px;
   --gap: 2px;
-  --row-gap: 8px;
+  --row-gap: 12px;
   --col-gap: 4px;
-  --max-width: 1100px;
+  --max-width: 1200px;
   --tooltip-bg: rgba(15, 17, 21, 0.95);
   --tooltip-fg: #ffffff;
   --tooltip-border: rgba(255, 255, 255, 0.1);
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
 
 header, main, footer { max-width: var(--max-width); margin: 0 auto; padding: 12px; }
 header h1 { margin: 8px 0 0 0; }
 header p { margin: 4px 0 0 0; color: var(--muted); }
 
-#legend { display: flex; align-items: center; gap: 10px; margin: 12px 0; color: var(--muted); }
-#legend .cell { display: inline-block; width: var(--cell); height: var(--cell); border-radius: 2px; }
+#legend { 
+  display: flex; 
+  align-items: center; 
+  gap: 10px; 
+  margin: 12px 0; 
+  color: var(--muted); 
+  justify-content: center;
+  padding: 10px;
+  background-color: rgba(37, 6, 58, 0.3);
+  border-radius: 6px;
+  border: 1px solid rgba(144, 70, 177, 0.3);
+}
+
+#legend .cell { 
+  display: inline-block; 
+  width: var(--cell); 
+  height: var(--cell); 
+  border-radius: 2px; 
+}
+
 .cell.green { background: var(--green); }
 .cell.yellow { background: var(--yellow); }
 .cell.red { background: var(--red); }
 
 #services { margin-top: 12px; }
-.service-row { display: grid; grid-template-columns: 180px 1fr; align-items: center; gap: var(--col-gap); margin-bottom: var(--row-gap); }
-.service-name { color: var(--fg); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-/* Timeline container - fixed grid that matches the number of cells we load */
+/* Modified service sections */
+.tag-group {
+  margin-bottom: 30px;
+  background-color: rgba(37, 6, 58, 0.3);
+  border: 1px solid #9046B1;
+  border-radius: 8px;
+  padding: 20px;
+  backdrop-filter: blur(2px);
+}
+
+.tag-header {
+  font-size: 1.2rem;
+  font-weight: bold;
+  margin: 0 0 20px 0;
+  color: #ffffff;
+  border-bottom: 1px solid #9046B1;
+  padding-bottom: 8px;
+}
+
+/* Column layout for services */
+.tag-services {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 20px;
+}
+
+.service-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.service-card {
+  background: linear-gradient(145deg, rgba(144, 70, 177, 0.2), rgba(37, 6, 58, 0.8));
+  border: 1px solid rgba(144, 70, 177, 0.5);
+  border-radius: 8px;
+  padding: 12px 15px 12px 15px;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 
+    0 4px 8px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+}
+
+.service-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--status-color, #9046B1);
+  transition: all 0.3s ease;
+}
+
+.service-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    0 8px 16px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.service-card.green {
+  --status-color: #21c36a;
+}
+
+.service-card.yellow {
+  --status-color: #ffbb33;
+}
+
+.service-card.red {
+  --status-color: #ff4d4f;
+}
+
+.service-card.loading {
+  --status-color: #9046B1;
+}
+
+/* Legacy support for semantic names */
+.service-card.healthy {
+  --status-color: #21c36a;
+}
+
+.service-card.slow {
+  --status-color: #ffbb33;
+}
+
+.service-card.down {
+  --status-color: #ff4d4f;
+}
+
+.service-name { 
+  color: var(--fg); 
+  font-weight: 600; 
+  overflow: hidden; 
+  text-overflow: ellipsis; 
+  white-space: nowrap; 
+  margin-bottom: 12px;
+  font-size: 0.95rem;
+}
+
+/* Timeline container - now inside service cards */
 .timeline {
   display: grid;
   grid-auto-flow: column;
-  grid-auto-columns: var(--cell);
+  grid-auto-columns: 1fr;
   gap: var(--gap);
   width: 100%;
+  max-width: 100%;
 }
 
-/* Base cell styles */
-.hour-cell { width: var(--cell); height: var(--cell); background: #2a2f3a; border-radius: 2px; }
+/* Base cell styles - now wider to fill service card width */
+.hour-cell { 
+  width: 100%; 
+  height: var(--cell); 
+  background: #2a2f3a; 
+  border-radius: 2px; 
+  transition: all 0.2s ease;
+  min-width: 8px;
+}
+
 .hour-cell.loading { background: #1b1f27; }
 
 /* Color classes for hour cells */
@@ -51,9 +299,14 @@ header p { margin: 4px 0 0 0; color: var(--muted); }
 .hour-cell.red { background: var(--red); }
 
 /* hover tooltip via native title attribute, optional slight outline */
-.hour-cell:hover { outline: 1px solid rgba(255,255,255,0.15); outline-offset: 0; }
+.hour-cell:hover { 
+  outline: 1px solid rgba(255,255,255,0.15); 
+  outline-offset: 0;
+  transform: scale(1.2);
+  z-index: 10;
+}
 
-/* Custom tooltip */
+/* Custom tooltip for timeline cells */
 .custom-tooltip {
   position: absolute;
   background: var(--tooltip-bg);
@@ -62,6 +315,7 @@ header p { margin: 4px 0 0 0; color: var(--muted); }
   border-radius: 4px;
   padding: 8px 12px;
   font-size: 14px;
+  font-family: 'Montserrat', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
   pointer-events: none;
   z-index: 1000;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
@@ -79,18 +333,74 @@ header p { margin: 4px 0 0 0; color: var(--muted); }
   color: var(--muted);
 }
 
+/* Service card tooltip */
+.service-tooltip {
+  position: absolute;
+  background: rgba(15, 17, 21, 0.95);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 12px 16px;
+  font-size: 13px;
+  font-family: 'Montserrat', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", "Liberation Sans", Arial, sans-serif;
+  pointer-events: none;
+  z-index: 1001;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+  display: none;
+  min-width: 200px;
+  max-width: 300px;
+}
+
+.service-tooltip .tooltip-service-name {
+  font-weight: 600;
+  margin-bottom: 6px;
+  color: #ffffff;
+}
+
+.service-tooltip .tooltip-status {
+  margin-bottom: 4px;
+}
+
+.service-tooltip .tooltip-response-time {
+  margin-bottom: 4px;
+}
+
+.service-tooltip .tooltip-last-check {
+  color: var(--muted);
+  font-size: 12px;
+}
+
 /* Mobile: stack service name above timeline to optimize space */
 @media (max-width: 640px) {
-  .service-row {
-    grid-template-columns: 1fr;
-    align-items: start;
-    gap: 6px;
+  .app {
+    min-width: auto;
+    margin: 15px;
+    padding: 20px 25px;
   }
+
+  .stats-container {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .tag-services {
+    grid-template-columns: 1fr;
+  }
+
   .service-name {
     margin-bottom: 4px;
-    white-space: normal; /* allow wrapping on narrow screens */
+    white-space: normal;
+  }
+
+  .logo-gradient {
+    font-size: 2rem;
   }
 }
 
-footer { color: var(--muted); margin-top: 16px; }
+footer { 
+  color: var(--muted); 
+  margin-top: 16px; 
+  text-align: center;
+}
+
 footer a { color: var(--muted); }
