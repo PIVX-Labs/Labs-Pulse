@@ -5,7 +5,6 @@ async function fetchJson(url) {
   return res.json();
 }
 
-
 function computeWindow(nowMs, bucketMs, len) {
   const currentBucketStart = Math.floor(nowMs / bucketMs) * bucketMs;
   const endBucketStart = currentBucketStart - bucketMs; // last completed
@@ -114,6 +113,12 @@ function buildCells(services, snapshotsByService, bucketMs, len, thresholdsBySer
 
 // Show custom tooltip for timeline cells
 function showTooltip(event, cellData) {
+  // On mobile, hide any existing service tooltip first
+  const isMobile = window.innerWidth <= 640;
+  if (isMobile) {
+    hideServiceTooltip();
+  }
+
   let tooltip = document.getElementById('custom-tooltip');
   if (!tooltip) {
     tooltip = document.createElement('div');
@@ -131,19 +136,20 @@ function showTooltip(event, cellData) {
     <div class="tooltip-ping">${pingStr}</div>
   `;
   
-  // Check if mobile device
-  const isMobile = window.innerWidth <= 640;
-  
   if (isMobile) {
-    // Center tooltip on mobile
-    tooltip.style.left = '50%';
+    // Center tooltip on mobile using viewport positioning
+    tooltip.style.left = '50vw';
     tooltip.style.top = (event.pageY + 15) + 'px';
     tooltip.style.transform = 'translateX(-50%)';
+    tooltip.style.position = 'fixed';
+    tooltip.style.zIndex = '2000';
   } else {
     // Normal desktop positioning
     tooltip.style.left = (event.pageX + 10) + 'px';
     tooltip.style.top = (event.pageY + 10) + 'px';
     tooltip.style.transform = 'none';
+    tooltip.style.position = 'absolute';
+    tooltip.style.zIndex = '1000';
   }
   
   tooltip.style.display = 'block';
@@ -161,6 +167,12 @@ function hideTooltip() {
 function showServiceTooltip(event, service, latestPing, status) {
   const tooltip = document.getElementById('serviceTooltip');
   if (!tooltip) return;
+
+  // On mobile, hide any existing timeline tooltip first
+  const isMobile = window.innerWidth <= 640;
+  if (isMobile) {
+    hideTooltip();
+  }
 
   let statusText = status === 'green' ? 'Healthy' : status === 'yellow' ? 'Slow' : status === 'red' ? 'Down' : 'Loading...';
   let responseText = '';
@@ -182,19 +194,20 @@ function showServiceTooltip(event, service, latestPing, status) {
     <div class="tooltip-last-check">Last checked: ${lastChecked}</div>
   `;
   
-  // Check if mobile device
-  const isMobile = window.innerWidth <= 640;
-  
   if (isMobile) {
-    // Center tooltip on mobile
-    tooltip.style.left = '50%';
+    // Center tooltip on mobile using viewport positioning
+    tooltip.style.left = '50vw';
     tooltip.style.top = (event.pageY + 15) + 'px';
     tooltip.style.transform = 'translateX(-50%)';
+    tooltip.style.position = 'fixed';
+    tooltip.style.zIndex = '1500';
   } else {
     // Normal desktop positioning
     tooltip.style.left = (event.pageX + 10) + 'px';
     tooltip.style.top = (event.pageY + 10) + 'px';
     tooltip.style.transform = 'none';
+    tooltip.style.position = 'absolute';
+    tooltip.style.zIndex = '1001';
   }
   
   tooltip.style.display = 'block';
@@ -297,6 +310,16 @@ function render(services, rows) {
           hideServiceTooltip(); // Hide service tooltip if it's showing
           showTooltip(e, c);
         });
+        cell.addEventListener("click", (e) => {
+          e.stopPropagation(); // Prevent service card tooltip from showing
+          hideServiceTooltip(); // Hide service tooltip if it's showing
+          showTooltip(e, c);
+        });
+        cell.addEventListener("touchstart", (e) => {
+          e.stopPropagation(); // Prevent service card tooltip from showing
+          hideServiceTooltip(); // Hide service tooltip if it's showing
+          showTooltip(e, c);
+        });
         cell.addEventListener("mousemove", (e) => {
           e.stopPropagation(); // Prevent service card tooltip positioning
           const tooltip = document.getElementById("custom-tooltip");
@@ -324,6 +347,26 @@ function render(services, rows) {
         const latestCell = row.cells[row.cells.length - 1];
         const latestPing = latestCell ? latestCell.ping_ms : 0;
         showServiceTooltip(e, row.service, latestPing, row.cardStatus);
+      });
+      
+      serviceCard.addEventListener("click", (e) => {
+        // Only show tooltip if clicking on service card but not on timeline cells
+        if (!e.target.classList.contains('hour-cell')) {
+          const latestCell = row.cells[row.cells.length - 1];
+          const latestPing = latestCell ? latestCell.ping_ms : 0;
+          hideTooltip(); // Hide timeline tooltip if showing
+          showServiceTooltip(e, row.service, latestPing, row.cardStatus);
+        }
+      });
+      
+      serviceCard.addEventListener("touchstart", (e) => {
+        // Only show tooltip if touching service card but not timeline cells
+        if (!e.target.classList.contains('hour-cell')) {
+          const latestCell = row.cells[row.cells.length - 1];
+          const latestPing = latestCell ? latestCell.ping_ms : 0;
+          hideTooltip(); // Hide timeline tooltip if showing
+          showServiceTooltip(e, row.service, latestPing, row.cardStatus);
+        }
       });
       
       serviceCard.addEventListener("mousemove", (e) => {
@@ -383,7 +426,6 @@ async function loadSnapshotsForServices(services, bucketMs, len) {
   }
 }
 
-
 async function main() {
   try {
     const servicesResp = await fetchJson("/api/services");
@@ -438,7 +480,6 @@ async function main() {
         // If we didn't get any data (error or empty), keep the current UI (loading or last good)
         if (!snapshotsByService) return;
 
-
         const rows = buildCells(
           services,
           snapshotsByService,
@@ -480,6 +521,21 @@ async function main() {
         lastCheckedElement.textContent = timeString;
       }
     }, 30000);
+
+    // Add global click handler to hide tooltips on mobile
+    document.addEventListener('click', (e) => {
+      const isMobile = window.innerWidth <= 640;
+      if (isMobile) {
+        // Check if click is outside service cards and timeline cells
+        const isServiceCard = e.target.closest('.service-card');
+        const isTimelineCell = e.target.classList.contains('hour-cell');
+        
+        if (!isServiceCard && !isTimelineCell) {
+          hideTooltip();
+          hideServiceTooltip();
+        }
+      }
+    });
 
   } catch (e) {
     console.error("Failed to initialize UI", e);
