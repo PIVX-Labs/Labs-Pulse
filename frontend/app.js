@@ -292,8 +292,13 @@ function render(services, rows) {
         cell.className = `hour-cell ${c.cls}`;
 
         // Custom tooltip for timeline cells
-        cell.addEventListener("mouseover", (e) => showTooltip(e, c));
+        cell.addEventListener("mouseover", (e) => {
+          e.stopPropagation(); // Prevent service card tooltip from showing
+          hideServiceTooltip(); // Hide service tooltip if it's showing
+          showTooltip(e, c);
+        });
         cell.addEventListener("mousemove", (e) => {
+          e.stopPropagation(); // Prevent service card tooltip positioning
           const tooltip = document.getElementById("custom-tooltip");
           if (tooltip && tooltip.style.display === 'block') {
             const isMobile = window.innerWidth <= 640;
@@ -304,7 +309,9 @@ function render(services, rows) {
             }
           }
         });
-        cell.addEventListener("mouseout", hideTooltip);
+        cell.addEventListener("mouseout", (e) => {
+          hideTooltip();
+        });
 
         timeline.appendChild(cell);
       });
