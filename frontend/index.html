@@ -7,24 +7,39 @@
     <link rel="stylesheet" href="./styles.css" />
   </head>
   <body>
-    <header>
-      <h1>Labs Pulse</h1>
-      <p>PIVX Labs infrastructure monitor</p>
-    </header>
+    <div class="app">
+      <header>
+        <h1 class="logo-gradient">Labs Pulse</h1>
+        <p class="subtitle">PIVX Labs infrastructure monitor</p>
+        
+        <div class="stats-container">
+          <div class="stat-box">
+            <div class="stat-title">Last Checked</div>
+            <div class="stat-value" id="lastChecked">--</div>
+          </div>
+          <div class="stat-box">
+            <div class="stat-title">Incidents</div>
+            <div class="stat-value" id="incidents">0</div>
+          </div>
+        </div>
+      </header>
 
-    <main>
-      <section id="legend">
-        <span class="cell green"></span> <span>Healthy</span>
-        <span class="cell yellow"></span> <span>Slow</span>
-        <span class="cell red"></span> <span>Down</span>
-      </section>
+      <main>
+        <section id="legend">
+          <span class="cell green"></span> <span>Healthy</span>
+          <span class="cell yellow"></span> <span>Slow</span>
+          <span class="cell red"></span> <span>Down</span>
+        </section>
 
-      <section id="services"></section>
-    </main>
+        <section id="services"></section>
+      </main>
 
-    <footer>
-      <small>Backend <a href="/api/ping" target="_blank" rel="noopener">ping</a></small>
-    </footer>
+      <footer>
+        <small>Backend <a href="/api/ping" target="_blank" rel="noopener">ping</a></small>
+      </footer>
+    </div>
+
+    <div class="service-tooltip" id="serviceTooltip"></div>
 
     <script src="./app.js"></script>
   </body>
