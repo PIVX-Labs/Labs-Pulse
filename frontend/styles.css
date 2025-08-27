@@ -232,6 +232,23 @@ header p { margin: 4px 0 0 0; color: var(--muted); }
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
+.service-card.green {
+  --status-color: #21c36a;
+}
+
+.service-card.yellow {
+  --status-color: #ffbb33;
+}
+
+.service-card.red {
+  --status-color: #ff4d4f;
+}
+
+.service-card.loading {
+  --status-color: #9046B1;
+}
+
+/* Legacy support for semantic names */
 .service-card.healthy {
   --status-color: #21c36a;
 }
