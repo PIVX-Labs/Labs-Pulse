@@ -49,6 +49,15 @@
       "retries": 0
     },
     {
+      "id": "pivx-toolbox",
+      "name": "PIVX Toolbox",
+      "url": "https://toolbox.pivx.org/",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1000,
+      "tags": ["web"],
+      "retries": 0
+    },
+    {
       "id": "pivx-labs-explorer",
       "name": "PIVX Labs Explorer",
       "url": "https://explorer.pivxla.bz/",
