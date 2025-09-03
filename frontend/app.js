@@ -81,20 +81,28 @@ function buildCells(services, snapshotsByService, bucketMs, len, thresholdsBySer
     const byHour = new Map(snaps.map((sn) => [sn.hour_utc_ms, sn.ping_ms]));
 
     const cells = buckets.map((h) => {
-      const ping = byHour.has(h) ? byHour.get(h) : 0; // treat missing as down
-      let cls = "loading"; // default to loading state
+      const hasData = byHour.has(h);
+      const ping = hasData ? byHour.get(h) : null; // null indicates "no data"
+      let cls = "loading"; // default to loading state (skeleton)
       let title = `${new Date(h).toISOString()} • No data`;
       
       // Only apply color logic if not in loading state
       if (!isLoading) {
-        if (ping > 0 && ping <= threshold) {
+        if (!hasData) {
+          // No data should be neutral (black/default), and not counted as incidents
+          cls = "nodata";
+          title = `${new Date(h).toISOString()} • No data`;
+        } else if (ping > 0 && ping <= threshold) {
           cls = "green";
+          title = `${new Date(h).toISOString()} • ${ping} ms`;
         } else if (ping > threshold) {
           cls = "yellow";
+          title = `${new Date(h).toISOString()} • ${ping} ms`;
         } else {
+          // ping present but 0 or invalid -> treat as down
           cls = "red";
+          title = `${new Date(h).toISOString()} • Down`;
         }
-        title = `${new Date(h).toISOString()} • ${ping} ms`;
       }
       
       return { hour: h, ping_ms: ping, cls, title };
@@ -177,8 +185,10 @@ function showServiceTooltip(event, service, latestPing, status) {
   let statusText = status === 'green' ? 'Healthy' : status === 'yellow' ? 'Slow' : status === 'red' ? 'Down' : 'Loading...';
   let responseText = '';
   
-  if (status === 'red' || latestPing === 0) {
+  if (status === 'red') {
     responseText = 'Service unreachable';
+  } else if (status === 'nodata') {
+    responseText = 'No recent data';
   } else if (latestPing > 0) {
     responseText = `${latestPing}ms response time`;
   } else {
@@ -231,14 +241,30 @@ function updateStats(services, rows) {
     lastCheckedElement.textContent = timeString;
   }
 
-  // Count incidents (down services)
+  // Count incidents (consecutive downtime runs across all services)
+  // An "incident" is a contiguous run of red cells (downtime) per service.
+  // Cells with "nodata" or "loading" are neutral and do NOT count as downtime
+  // and also break any ongoing downtime incident.
   let incidents = 0;
   rows.forEach(row => {
-    if (row.cardStatus === 'red') {
-      incidents++;
-    }
+    let inDown = false;
+    row.cells.forEach(c => {
+      const isDown = c.cls === 'red';
+      const isNeutral = c.cls === 'nodata' || c.cls === 'loading';
+      if (isDown && !inDown) {
+        incidents++;
+        inDown = true;
+      } else if (!isDown) {
+        // Any non-red cell (green/yellow/neutral) ends a down run
+        inDown = false;
+      }
+      if (isNeutral) {
+        // Explicitly ensure neutral cells cannot be part of an incident
+        inDown = false;
+      }
+    });
   });
-  
+
   const incidentsElement = document.getElementById('incidents');
   if (incidentsElement) {
     incidentsElement.textContent = incidents;
