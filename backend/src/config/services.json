@@ -68,17 +68,8 @@
     },
     {
       "id": "duddino-explorer-1",
-      "name": "Duddino Explorer (1)",
+      "name": "Duddino Explorer",
       "url": "https://explorer.duddino.com/",
-      "timeout_ms": 5000,
-      "slow_threshold_ms": 1200,
-      "tags": ["infra"],
-      "retries": 0
-    },
-    {
-      "id": "duddino-explorer-2",
-      "name": "Duddino Explorer (2)",
-      "url": "https://explorer2.duddino.com/",
       "timeout_ms": 5000,
       "slow_threshold_ms": 1200,
       "tags": ["infra"],
