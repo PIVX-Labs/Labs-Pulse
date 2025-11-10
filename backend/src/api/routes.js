@@ -37,9 +37,33 @@ router.get("/health", async (req, res) => {
     const currentBucket = hourBucketUtcMs(now);
     
     // Helper function to calculate ping_ms from accumulator data
-    // Returns 0 if the last 2 pings failed
-    const calculatePingMs = (data) => {
-      if (!data || data.samples_ok === 0) {
+    // Returns 0 if the last 2 pings failed or if there's no recent data
+    const calculatePingMs = async (data, serviceId) => {
+      // If no data at all, try to get the latest snapshot for this service
+      if (!data) {
+        try {
+          const latestSnapshot = await getLatestSnapshot(serviceId);
+          if (latestSnapshot && latestSnapshot.ping_ms !== undefined) {
+            return latestSnapshot.ping_ms;
+          }
+        } catch (err) {
+          // If we can't get the snapshot, fall back to 0
+          console.warn(`Failed to fetch latest snapshot for service ${serviceId}:`, err);
+        }
+        return 0;
+      }
+      
+      // If no samples have been recorded yet, try to get the latest snapshot
+      if (data.samples_ok === 0 && data.samples_total === 0) {
+        try {
+          const latestSnapshot = await getLatestSnapshot(serviceId);
+          if (latestSnapshot && latestSnapshot.ping_ms !== undefined) {
+            return latestSnapshot.ping_ms;
+          }
+        } catch (err) {
+          // If we can't get the snapshot, fall back to 0
+          console.warn(`Failed to fetch latest snapshot for service ${serviceId}:`, err);
+        }
         return 0;
       }
       
@@ -67,7 +91,7 @@ router.get("/health", async (req, res) => {
     for (const service of services) {
       // Get current hour's real-time data from accumulator
       const currentHourData = accumulator.getCurrentHourData(service.id, currentBucket);
-      const lastPingMs = calculatePingMs(currentHourData);
+      const lastPingMs = await calculatePingMs(currentHourData, service.id);
       
       // Derive status and color
       const status = lastPingMs > 0 ? 'up' : 'down';
@@ -174,9 +198,33 @@ router.get("/snapshots", async (req, res) => {
     
     
     // Helper function to calculate ping_ms from accumulator data
-    // Returns 0 if the last 2 pings failed
-    const calculatePingMs = (data) => {
-      if (!data || data.samples_ok === 0) {
+    // Returns 0 if the last 2 pings failed or if there's no recent data
+    const calculatePingMs = async (data, serviceId) => {
+      // If no data at all, try to get the latest snapshot for this service
+      if (!data) {
+        try {
+          const latestSnapshot = await getLatestSnapshot(serviceId);
+          if (latestSnapshot && latestSnapshot.ping_ms !== undefined) {
+            return latestSnapshot.ping_ms;
+          }
+        } catch (err) {
+          // If we can't get the snapshot, fall back to 0
+          console.warn(`Failed to fetch latest snapshot for service ${serviceId}:`, err);
+        }
+        return 0;
+      }
+      
+      // If no samples have been recorded yet, try to get the latest snapshot
+      if (data.samples_ok === 0 && data.samples_total === 0) {
+        try {
+          const latestSnapshot = await getLatestSnapshot(serviceId);
+          if (latestSnapshot && latestSnapshot.ping_ms !== undefined) {
+            return latestSnapshot.ping_ms;
+          }
+        } catch (err) {
+          // If we can't get the snapshot, fall back to 0
+          console.warn(`Failed to fetch latest snapshot for service ${serviceId}:`, err);
+        }
         return 0;
       }
       
@@ -201,7 +249,7 @@ router.get("/snapshots", async (req, res) => {
     // Add real-time data for each service
     for (const id of ids) {
       const currentHourData = accumulator.getCurrentHourData(id, currentBucket);
-      const pingMs = calculatePingMs(currentHourData);
+      const pingMs = await calculatePingMs(currentHourData, id);
       const timestampToUse = currentBucket;
       
       // Only add if timestamp is within the requested range
