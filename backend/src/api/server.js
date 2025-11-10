@@ -2,12 +2,13 @@ const express = require("express");
 const path = require("path");
 const routes = require("./routes");
 
-async function startServer({ port, config }) {
+async function startServer({ port, config, accumulator }) {
   const app = express();
   app.use(express.json());
 
-  // Expose config to routes via app.locals
+  // Expose config and accumulator to routes via app.locals
   app.locals.config = config;
+  app.locals.accumulator = accumulator;
 
   // API routes
   app.use("/api", routes);

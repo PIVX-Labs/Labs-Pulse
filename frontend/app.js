@@ -7,7 +7,7 @@ async function fetchJson(url) {
 
 function computeWindow(nowMs, bucketMs, len) {
   const currentBucketStart = Math.floor(nowMs / bucketMs) * bucketMs;
-  const endBucketStart = currentBucketStart - bucketMs; // last completed
+  const endBucketStart = currentBucketStart; // include current hour for real-time data
   const startBucketStart = endBucketStart - (len - 1) * bucketMs;
   return { from: startBucketStart, to: endBucketStart };
 }
@@ -78,34 +78,36 @@ function buildCells(services, snapshotsByService, bucketMs, len, thresholdsBySer
   return services.map((s) => {
     const threshold = thresholdsByService.get(s.id) ?? 1000;
     const snaps = snapshotsByService.get(s.id) || [];
-    const byHour = new Map(snaps.map((sn) => [sn.hour_utc_ms, sn.ping_ms]));
 
     const cells = buckets.map((h) => {
-      const hasData = byHour.has(h);
-      const ping = hasData ? byHour.get(h) : null; // null indicates "no data"
+      const snap = snaps.find(sn => sn.hour_utc_ms === h);
+      const hasData = !!snap;
+      const ping = hasData ? snap.ping_ms : null;
+      const displayTime = (snap && snap.last_check_ms) ? snap.last_check_ms : h;
+      
       let cls = "loading"; // default to loading state (skeleton)
-      let title = `${new Date(h).toISOString()} • No data`;
+      let title = `${new Date(displayTime).toISOString()} • No data`;
       
       // Only apply color logic if not in loading state
       if (!isLoading) {
         if (!hasData) {
           // No data should be neutral (black/default), and not counted as incidents
           cls = "nodata";
-          title = `${new Date(h).toISOString()} • No data`;
+          title = `${new Date(displayTime).toISOString()} • No data`;
         } else if (ping > 0 && ping <= threshold) {
           cls = "green";
-          title = `${new Date(h).toISOString()} • ${ping} ms`;
+          title = `${new Date(displayTime).toISOString()} • ${ping} ms`;
         } else if (ping > threshold) {
           cls = "yellow";
-          title = `${new Date(h).toISOString()} • ${ping} ms`;
+          title = `${new Date(displayTime).toISOString()} • ${ping} ms`;
         } else {
           // ping present but 0 or invalid -> treat as down
           cls = "red";
-          title = `${new Date(h).toISOString()} • Down`;
+          title = `${new Date(displayTime).toISOString()} • Down`;
         }
       }
       
-      return { hour: h, ping_ms: ping, cls, title };
+      return { hour: h, ping_ms: ping, cls, title, displayTime };
     });
 
     // Determine the latest status for the service card
@@ -135,8 +137,9 @@ function showTooltip(event, cellData) {
     document.body.appendChild(tooltip);
   }
   
-  // Format the date nicely
-  const dateStr = formatTooltipDate(cellData.hour);
+  // Format the date nicely - use displayTime if available, otherwise hour
+  const timeToShow = cellData.displayTime || cellData.hour;
+  const dateStr = formatTooltipDate(timeToShow);
   const pingStr = cellData.ping_ms > 0 ? `${cellData.ping_ms} ms` : 'No data (down)';
   
   tooltip.innerHTML = `
@@ -326,7 +329,7 @@ function render(services, rows) {
       const timeline = document.createElement("div");
       timeline.className = "timeline";
 
-      row.cells.forEach((c) => {
+      row.cells.forEach((c, index) => {
         const cell = document.createElement("div");
         cell.className = `hour-cell ${c.cls}`;
 
@@ -528,7 +531,7 @@ async function main() {
       refresh().catch(console.error);
     }, 100);
 
-    const interval = bucketMs === 60000 ? 60000 : 300000; // 1m or 5m
+    const interval = 15000; // 15 seconds for real-time updates
     setInterval(refresh, interval);
     
     // Also refresh on window resize

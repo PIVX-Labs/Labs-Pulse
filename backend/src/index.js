@@ -10,17 +10,21 @@ async function main() {
   const config = await loadConfig();
   const port = process.env.PORT || 8080;
   
-  // Start the HTTP server
-  await startServer({ port, config });
+  // Create accumulator object to pass to both server and poller
+  const accumulator = {
+    recordSample,
+    getCurrentHourData: require("./lib/accumulator").getCurrentHourData
+  };
+  
+  // Start the HTTP server with accumulator access
+  await startServer({ port, config, accumulator });
 
   // Log bucket mode at startup for debugging
   const bucketSizeMs = process.env.PULSE_DEBUG_MINUTE_BUCKETS === '1' ? 60000 : 3600000;
   console.log(`[Startup] Bucket mode: ${bucketSizeMs === 60000 ? 'minute (60s)' : 'hourly (3600s)'}`);
   
   // Start the poller
-  const stopPoller = startPoller(config, {
-    recordSample
-  });
+  const stopPoller = startPoller(config, accumulator);
   
   // Start the scheduler
   const stopScheduler = startScheduler(async (completedHourUtcMs) => {

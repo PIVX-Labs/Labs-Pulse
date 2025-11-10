@@ -27,7 +27,9 @@ function recordSample(serviceId, timestampMs, ok, latencyMs) {
     data[serviceId][bucket] = {
       samples_total: 0,
       samples_ok: 0,
-      success_latencies: []
+      success_latencies: [],
+      recent_results: [], // Track last N results (true/false for ok/fail)
+      last_check_ms: null // Timestamp of most recent check
     };
   }
   
@@ -37,6 +39,16 @@ function recordSample(serviceId, timestampMs, ok, latencyMs) {
     data[serviceId][bucket].samples_ok++;
     data[serviceId][bucket].success_latencies.push(latencyMs);
   }
+  
+  // Track recent results (keep last 10 for analysis)
+  data[serviceId][bucket].recent_results.push(ok);
+  if (data[serviceId][bucket].recent_results.length > 10) {
+    data[serviceId][bucket].recent_results.shift();
+  }
+  
+  // Update last check timestamp
+  data[serviceId][bucket].last_check_ms = timestampMs;
+  
 }
 
 function getAndResetForHour(hourUtcMs) {
@@ -68,8 +80,23 @@ function clearHour(hourUtcMs) {
   }
 }
 
+function getCurrentHourData(serviceId, hourUtcMs) {
+  // Get current hour's data without resetting it
+  if (data[serviceId] && data[serviceId][hourUtcMs]) {
+    return {
+      samples_total: data[serviceId][hourUtcMs].samples_total,
+      samples_ok: data[serviceId][hourUtcMs].samples_ok,
+      success_latencies: [...data[serviceId][hourUtcMs].success_latencies],
+      recent_results: [...data[serviceId][hourUtcMs].recent_results],
+      last_check_ms: data[serviceId][hourUtcMs].last_check_ms
+    };
+  }
+  return null;
+}
+
 module.exports = {
   recordSample,
   getAndResetForHour,
-  clearHour
+  clearHour,
+  getCurrentHourData
 };

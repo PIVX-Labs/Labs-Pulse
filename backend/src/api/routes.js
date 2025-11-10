@@ -25,26 +25,49 @@ router.get("/services", (req, res) => {
   res.json({ services });
 });
 
-// Current health derived from latest finalized snapshot
+// Current health derived from real-time accumulator data
 router.get("/health", async (req, res) => {
   try {
     const config = req.app.locals.config;
+    const accumulator = req.app.locals.accumulator;
     const services = config.services || [];
     
-    // Determine the finalized bucket boundary
+    // Get current hour bucket for real-time data
     const now = Date.now();
-    const currentBucketStart = hourBucketUtcMs(now);
-    const completedBucket = currentBucketStart - (process.env.PULSE_DEBUG_MINUTE_BUCKETS === '1' ? 60000 : 3600000);
+    const currentBucket = hourBucketUtcMs(now);
     
-    // For each configured service, get latest snapshot
+    // Helper function to calculate ping_ms from accumulator data
+    // Returns 0 if the last 2 pings failed
+    const calculatePingMs = (data) => {
+      if (!data || data.samples_ok === 0) {
+        return 0;
+      }
+      
+      // Check if last 2 results were failures
+      if (data.recent_results && data.recent_results.length >= 2) {
+        const lastTwo = data.recent_results.slice(-2);
+        if (lastTwo[0] === false && lastTwo[1] === false) {
+          return 0; // Last 2 pings failed, show as down
+        }
+      }
+      
+      // Otherwise calculate median of successful pings
+      const latencies = data.success_latencies.sort((a, b) => a - b);
+      const len = latencies.length;
+      if (len % 2 === 0) {
+        return Math.round((latencies[len / 2 - 1] + latencies[len / 2]) / 2);
+      } else {
+        return latencies[Math.floor(len / 2)];
+      }
+    };
+    
+    // For each configured service, get real-time data
     const serviceHealth = [];
     
     for (const service of services) {
-      const snapshot = await getLatestSnapshot(service.id, completedBucket);
-      
-      // If no snapshot exists or the latest snapshot is older than the completed bucket,
-      // treat the service as down for that completed bucket with last_ping_ms = 0
-      const lastPingMs = (snapshot && snapshot.hour_utc_ms >= completedBucket) ? snapshot.ping_ms : 0;
+      // Get current hour's real-time data from accumulator
+      const currentHourData = accumulator.getCurrentHourData(service.id, currentBucket);
+      const lastPingMs = calculatePingMs(currentHourData);
       
       // Derive status and color
       const status = lastPingMs > 0 ? 'up' : 'down';
@@ -58,7 +81,7 @@ router.get("/health", async (req, res) => {
       serviceHealth.push({
         id: service.id,
         status,
-        last_hour_utc_ms: completedBucket,
+        last_hour_utc_ms: currentBucket,
         last_ping_ms: lastPingMs,
         color
       });
@@ -144,13 +167,85 @@ router.get("/snapshots", async (req, res) => {
     // Read snapshots
     const snapshotsData = await readSnapshots(ids, fromUtcMs, toUtcMs, effectiveLimit);
     
+    // Get current hour bucket and add real-time data as last datapoint
+    const now = Date.now();
+    const currentBucket = hourBucketUtcMs(now);
+    const accumulator = req.app.locals.accumulator;
+    
+    
+    // Helper function to calculate ping_ms from accumulator data
+    // Returns 0 if the last 2 pings failed
+    const calculatePingMs = (data) => {
+      if (!data || data.samples_ok === 0) {
+        return 0;
+      }
+      
+      // Check if last 2 results were failures
+      if (data.recent_results && data.recent_results.length >= 2) {
+        const lastTwo = data.recent_results.slice(-2);
+        if (lastTwo[0] === false && lastTwo[1] === false) {
+          return 0; // Last 2 pings failed, show as down
+        }
+      }
+      
+      // Otherwise calculate median of successful pings
+      const latencies = data.success_latencies.sort((a, b) => a - b);
+      const len = latencies.length;
+      if (len % 2 === 0) {
+        return Math.round((latencies[len / 2 - 1] + latencies[len / 2]) / 2);
+      } else {
+        return latencies[Math.floor(len / 2)];
+      }
+    };
+    
+    // Add real-time data for each service
+    for (const id of ids) {
+      const currentHourData = accumulator.getCurrentHourData(id, currentBucket);
+      const pingMs = calculatePingMs(currentHourData);
+      const timestampToUse = currentBucket;
+      
+      // Only add if timestamp is within the requested range
+      if (timestampToUse >= fromUtcMs && timestampToUse <= toUtcMs) {
+        if (!snapshotsData[id]) {
+          snapshotsData[id] = [];
+        }
+        
+        // Check if we already have this timestamp in historical data
+        const hasCurrentBucket = snapshotsData[id].some(s => s.hour_utc_ms === timestampToUse);
+        
+        // Only add if not already present (avoid duplicates)
+        if (!hasCurrentBucket) {
+          const datapoint = {
+            hour_utc_ms: timestampToUse,
+            ping_ms: pingMs
+          };
+          
+          // Add last_check_ms for real-time datapoints so frontend can show actual check time
+          if (currentHourData && currentHourData.last_check_ms) {
+            datapoint.last_check_ms = currentHourData.last_check_ms;
+          }
+          
+          snapshotsData[id].push(datapoint);
+        }
+      }
+    }
+    
     // Format response
     if (ids.length === 1) {
       // For one service_id, respond with service_id and snapshots array
-      const snapshots = (snapshotsData[ids[0]] || []).map(snapshot => ({
-        hour_utc_ms: snapshot.hour_utc_ms,
-        ping_ms: snapshot.ping_ms
-      }));
+      const snapshots = (snapshotsData[ids[0]] || [])
+        .sort((a, b) => a.hour_utc_ms - b.hour_utc_ms)
+        .map(snapshot => {
+          const result = {
+            hour_utc_ms: snapshot.hour_utc_ms,
+            ping_ms: snapshot.ping_ms
+          };
+          // Include last_check_ms if present (for real-time datapoints)
+          if (snapshot.last_check_ms) {
+            result.last_check_ms = snapshot.last_check_ms;
+          }
+          return result;
+        });
       
       return res.json({
         service_id: ids[0],
@@ -159,10 +254,19 @@ router.get("/snapshots", async (req, res) => {
     } else {
       // For multiple, respond with results array
       const results = ids.map(id => {
-        const snapshots = (snapshotsData[id] || []).map(snapshot => ({
-          hour_utc_ms: snapshot.hour_utc_ms,
-          ping_ms: snapshot.ping_ms
-        }));
+        const snapshots = (snapshotsData[id] || [])
+          .sort((a, b) => a.hour_utc_ms - b.hour_utc_ms)
+          .map(snapshot => {
+            const result = {
+              hour_utc_ms: snapshot.hour_utc_ms,
+              ping_ms: snapshot.ping_ms
+            };
+            // Include last_check_ms if present (for real-time datapoints)
+            if (snapshot.last_check_ms) {
+              result.last_check_ms = snapshot.last_check_ms;
+            }
+            return result;
+          });
         
         return {
           service_id: id,
