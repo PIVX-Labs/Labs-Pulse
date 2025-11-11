@@ -67,11 +67,11 @@ router.get("/health", async (req, res) => {
         return 0;
       }
       
-      // Check if last 2 results were failures
-      if (data.recent_results && data.recent_results.length >= 2) {
-        const lastTwo = data.recent_results.slice(-2);
-        if (lastTwo[0] === false && lastTwo[1] === false) {
-          return 0; // Last 2 pings failed, show as down
+      // Check if last 3 results were failures
+      if (data.recent_results && data.recent_results.length >= 3) {
+        const lastThree = data.recent_results.slice(-3);
+        if (lastThree[0] === false && lastThree[1] === false && lastThree[2] === false) {
+          return 0; // Last 3 pings failed, show as down
         }
       }
       
@@ -228,11 +228,11 @@ router.get("/snapshots", async (req, res) => {
         return 0;
       }
       
-      // Check if last 2 results were failures
-      if (data.recent_results && data.recent_results.length >= 2) {
-        const lastTwo = data.recent_results.slice(-2);
-        if (lastTwo[0] === false && lastTwo[1] === false) {
-          return 0; // Last 2 pings failed, show as down
+      // Check if last 3 results were failures
+      if (data.recent_results && data.recent_results.length >= 3) {
+        const lastThree = data.recent_results.slice(-3);
+        if (lastThree[0] === false && lastThree[1] === false && lastThree[2] === false) {
+          return 0; // Last 3 pings failed, show as down
         }
       }
       
