@@ -102,6 +102,24 @@
       "slow_threshold_ms": 1000,
       "tags": ["web"],
       "retries": 0
+    },
+    {
+      "id": "pivx-labs-rpc",
+      "name": "PIVX Labs RPC",
+      "url": "https://rpc.pivxla.bz/mainnet/getblockcount",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1000,
+      "tags": ["infra"],
+      "retries": 0
+    },
+    {
+      "id": "duddino-rpc",
+      "name": "Duddino RPC",
+      "url": "https://rpc.duddino.com/mainnet/getblockcount",
+      "timeout_ms": 5000,
+      "slow_threshold_ms": 1000,
+      "tags": ["infra"],
+      "retries": 0
     }
   ]
 }
