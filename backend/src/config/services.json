@@ -61,7 +61,7 @@
       "id": "pivx-labs-explorer",
       "name": "PIVX Labs Explorer",
       "url": "https://explorer.pivxla.bz/",
-      "timeout_ms": 5000,
+      "timeout_ms": 120000,
       "slow_threshold_ms": 1200,
       "tags": ["infra"],
       "retries": 0
@@ -79,7 +79,7 @@
       "id": "zkbitcoin-explorer",
       "name": "zkBitcoin Explorer",
       "url": "https://zkbitcoin.com/",
-      "timeout_ms": 5000,
+      "timeout_ms": 120000,
       "slow_threshold_ms": 1200,
       "tags": ["infra"],
       "retries": 0
